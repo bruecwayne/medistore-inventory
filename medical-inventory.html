@@ -52,7 +52,17 @@
             --ease: 0.2s cubic-bezier(0.4,0,0.2,1);
         }
 
-        /* ── DARK THEME OVERRIDES (employee view only) ── */
+        /* ── LIGHT THEME OVERRIDES (admin panel) ── */
+        [data-theme="light"] {
+            --admin-bg: #f0f5fa;
+            --admin-surface: #e4ecf4;
+            --admin-card: #ffffff;
+            --admin-border: #cdd8e8;
+            --admin-text: #0a2540;
+            --admin-muted: #5a7a9a;
+        }
+
+        /* ── DARK THEME OVERRIDES (employee view) ── */
         [data-theme="dark"] {
             --white: #131e2e;
             --off-white: #0d1520;
@@ -94,6 +104,11 @@
             box-shadow: 0 1px 4px rgba(10,37,64,0.12);
         }
         [data-theme="dark"] .theme-btn.active { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+
+        /* Admin header theme toggle uses admin vars so it adapts to both themes */
+        .a-header .theme-toggle { background: var(--admin-surface); }
+        .a-header .theme-btn { color: var(--admin-muted); }
+        .a-header .theme-btn.active { background: var(--admin-bg); color: var(--admin-text); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
 
         html { font-family: var(--font-body); color: var(--navy); background: var(--off-white); -webkit-font-smoothing: antialiased; transition: background var(--ease), color var(--ease); }
         button { font-family: var(--font-body); cursor: pointer; }
@@ -634,6 +649,11 @@
                 <span class="a-badge">Admin</span>
             </div>
             <div class="a-header-btns">
+                <div class="theme-toggle">
+                    <button class="theme-btn" data-t="light" onclick="setTheme('light')" title="Light mode">☀ Light</button>
+                    <button class="theme-btn" data-t="dark"  onclick="setTheme('dark')"  title="Dark mode">🌙 Dark</button>
+                    <button class="theme-btn" data-t="auto"  onclick="setTheme('auto')"  title="Match system">🖥 Auto</button>
+                </div>
                 <button class="btn-back"     onclick="gotoEmployee()">← Employee View</button>
                 <button class="btn-changepw" onclick="openChangePw()">🔑 Change Password</button>
                 <button class="btn-logout"   onclick="adminLogout()">🔒 Logout</button>
