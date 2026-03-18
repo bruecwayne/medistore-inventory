@@ -189,22 +189,99 @@
         .btn-sort:hover { border-color: var(--teal); color: var(--teal); }
         .btn-sort.active { background: var(--teal); border-color: var(--teal); color: #fff; }
 
-        /* Category pills */
-        .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 16px; }
-        .cat-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 13px; background: var(--white);
-            border: 1.5px solid var(--grey-100); border-radius: 100px;
-            font-size: 0.78rem; font-weight: 500; color: var(--grey-600);
-            transition: all var(--ease); white-space: nowrap;
+        /* Category dropdown */
+        .cat-filter-row { display: flex; align-items: center; gap: 10px; padding-bottom: 16px; flex-wrap: wrap; }
+        .cat-select {
+            padding: 8px 14px; background: var(--white);
+            border: 1.5px solid var(--grey-100); border-radius: var(--r-sm);
+            font-size: 0.875rem; color: var(--navy); outline: none; cursor: pointer;
+            min-width: 200px; transition: border-color var(--ease), box-shadow var(--ease);
+            font-family: var(--font-body);
         }
-        .cat-pill:hover { border-color: var(--teal); color: var(--teal-dark); }
-        .cat-pill.active { background: var(--teal); border-color: var(--teal); color: #fff; }
-        .pill-count {
-            padding: 1px 6px; border-radius: 100px; font-size: 0.68rem; font-weight: 700;
-            background: rgba(255,255,255,0.25);
+        .cat-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,160,0.1); }
+        [data-theme="dark"] .cat-select { background: var(--white); color: var(--navy); }
+
+        /* Admin tabs */
+        .admin-tabs {
+            max-width: 1440px; margin: 0 auto; padding: 20px 36px 0;
+            display: none; gap: 4px;
         }
-        .cat-pill:not(.active) .pill-count { background: var(--grey-100); color: var(--grey-600); }
+        .admin-tabs.visible { display: flex; }
+        .admin-tab {
+            padding: 9px 22px; background: transparent;
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.83rem; font-weight: 600; color: var(--admin-muted);
+            transition: all var(--ease);
+        }
+        .admin-tab:hover { border-color: var(--teal); color: var(--teal); }
+        .admin-tab.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+        /* Categories tab */
+        .cats-content {
+            max-width: 1440px; margin: 0 auto; padding: 28px 36px 60px;
+            display: none; grid-template-columns: 340px 1fr; gap: 22px; align-items: start;
+        }
+        .cats-content.active { display: grid; }
+        .cat-add-card {
+            background: var(--admin-card); border: 1px solid var(--admin-border);
+            border-radius: var(--r); padding: 24px; position: sticky; top: 82px;
+        }
+        .cat-add-h {
+            font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+            color: var(--admin-text); margin-bottom: 16px;
+        }
+        .cat-add-row { display: flex; gap: 8px; }
+        .cat-add-input {
+            flex: 1; padding: 9px 12px; background: var(--admin-bg);
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.875rem; color: var(--admin-text); outline: none;
+            transition: border-color var(--ease);
+        }
+        .cat-add-input:focus { border-color: var(--teal); }
+        .cat-add-input::placeholder { color: var(--admin-muted); }
+        .btn-add-cat {
+            padding: 9px 16px; background: var(--teal); border: none;
+            border-radius: var(--r-sm); font-size: 0.83rem; font-weight: 700;
+            color: #fff; transition: background var(--ease); white-space: nowrap;
+        }
+        .btn-add-cat:hover { background: var(--teal-light); }
+        .cat-add-err { font-size: 0.75rem; color: var(--critical); margin-top: 6px; display: none; }
+
+        .cat-list-card {
+            background: var(--admin-card); border: 1px solid var(--admin-border);
+            border-radius: var(--r); overflow: hidden;
+        }
+        .cat-list-head {
+            padding: 18px 22px; border-bottom: 1px solid var(--admin-border);
+            font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+            color: var(--admin-text); display: flex; align-items: center; justify-content: space-between;
+        }
+        .cat-list-sub { font-family: var(--font-mono); font-size: 0.75rem; color: var(--admin-muted); }
+        .cat-list { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .cat-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 14px; background: var(--admin-bg);
+            border: 1px solid var(--admin-border); border-radius: var(--r-sm);
+            transition: border-color var(--ease);
+        }
+        .cat-item:hover { border-color: rgba(0,180,160,0.3); }
+        .cat-item-left { display: flex; align-items: center; gap: 10px; }
+        .cat-item-icon { font-size: 1.1rem; }
+        .cat-item-name { font-size: 0.875rem; font-weight: 600; color: var(--admin-text); }
+        .cat-item-count {
+            font-family: var(--font-mono); font-size: 0.72rem; color: var(--admin-muted);
+            background: var(--admin-surface); border: 1px solid var(--admin-border);
+            padding: 2px 7px; border-radius: 100px;
+        }
+        .cat-item-count.in-use { color: var(--teal); border-color: rgba(0,180,160,0.3); }
+        .btn-del-cat {
+            padding: 4px 10px; background: rgba(220,38,38,0.1); color: var(--critical);
+            border: none; border-radius: 4px; font-size: 0.72rem; font-weight: 600;
+            transition: background var(--ease);
+        }
+        .btn-del-cat:hover { background: rgba(220,38,38,0.25); }
+        .btn-del-cat:disabled { opacity: 0.35; cursor: not-allowed; }
+        .cat-empty { padding: 40px; text-align: center; color: var(--admin-muted); font-size: 0.85rem; }
 
         /* Alert chips */
         .e-alerts { max-width: 1440px; margin: 0 auto; padding: 0 36px 14px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -573,7 +650,12 @@
                 <button class="btn-sort active" id="s-none" onclick="setSort('none')">Default</button>
             </div>
         </div>
-        <div class="cat-pills" id="cat-pills"></div>
+        <div class="cat-filter-row">
+            <span class="sort-lbl">Category:</span>
+            <select class="cat-select" id="cat-select" onchange="setCat(this.value)">
+                <option value="All">🗂 All</option>
+            </select>
+        </div>
     </div>
 
     <div class="e-alerts" id="e-alerts"></div>
@@ -661,8 +743,14 @@
         </div>
     </header>
 
-    <!-- Admin content -->
-    <div class="a-content">
+    <!-- Admin tabs -->
+    <div class="admin-tabs" id="admin-tabs">
+        <button class="admin-tab active" id="tab-medicines"   onclick="switchAdminTab('medicines')">💊 Medicines</button>
+        <button class="admin-tab"        id="tab-categories"  onclick="switchAdminTab('categories')">🗂 Categories</button>
+    </div>
+
+    <!-- Medicines tab content -->
+    <div class="a-content" id="a-content-medicines">
 
         <!-- Form -->
         <div class="form-card">
@@ -678,16 +766,6 @@
                         <label class="f-lbl">Category *</label>
                         <select class="f-select" id="f-cat" required>
                             <option value="">Select…</option>
-                            <option>Antibiotics</option>
-                            <option>Pain Relief</option>
-                            <option>Vitamins &amp; Supplements</option>
-                            <option>Cardiovascular</option>
-                            <option>Diabetes</option>
-                            <option>Respiratory</option>
-                            <option>Gastrointestinal</option>
-                            <option>Dermatology</option>
-                            <option>Neurology</option>
-                            <option>Other</option>
                         </select>
                     </div>
                     <div class="fg">
@@ -761,6 +839,34 @@
             </div>
         </div>
     </div>
+
+    <!-- Categories tab content -->
+    <div class="cats-content" id="a-content-categories">
+        <!-- Add category -->
+        <div class="cat-add-card">
+            <div class="cat-add-h">＋ Add New Category</div>
+            <form onsubmit="addCategory(event)">
+                <div class="cat-add-row">
+                    <input type="text" class="cat-add-input" id="new-cat-name" placeholder="e.g. Oncology" required>
+                    <button type="submit" class="btn-add-cat">Add</button>
+                </div>
+                <div class="cat-add-err" id="cat-add-err"></div>
+            </form>
+            <p style="margin-top:16px;font-size:0.75rem;color:var(--admin-muted);line-height:1.6">
+                Categories added here appear in the medicine form and the employee view filter.<br>
+                A category cannot be deleted if medicines are assigned to it.
+            </p>
+        </div>
+
+        <!-- Category list -->
+        <div class="cat-list-card">
+            <div class="cat-list-head">
+                <span>All Categories</span>
+                <span class="cat-list-sub" id="cat-list-count">0 categories</span>
+            </div>
+            <div class="cat-list" id="cat-list"></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -787,6 +893,29 @@ const SAMPLE = [
     { id:'s19', name:'Pantoprazole 40mg',            category:'Gastrointestinal',        manufacturer:'Nycomed Pharma',   batchNumber:'NYC-2024-031', quantity:220, expiryDate:'2028-03-10', shelf:'G', row:'1', pos:'2',  price:22.00, description:'PPI for gastric ulcer treatment' },
     { id:'s20', name:'Clotrimazole 1% Cream',        category:'Dermatology',             manufacturer:'Johnson & Johnson',batchNumber:'JNJ-2024-008', quantity:100, expiryDate:'2026-12-20', shelf:'H', row:'2', pos:'1',  price:42.00, description:'Antifungal cream for skin infections' },
 ];
+
+// ── CATEGORIES DATA ──
+const DEFAULT_CATEGORIES = [
+    'Antibiotics','Pain Relief','Vitamins & Supplements','Cardiovascular',
+    'Diabetes','Respiratory','Gastrointestinal','Dermatology','Neurology','Other'
+];
+function getCategories() {
+    try { const s = localStorage.getItem('medistore_cats'); return s ? JSON.parse(s) : [...DEFAULT_CATEGORIES]; }
+    catch { return [...DEFAULT_CATEGORIES]; }
+}
+function saveCategories(cats) { localStorage.setItem('medistore_cats', JSON.stringify(cats)); }
+
+function refreshCatDropdowns() {
+    // Update admin form f-cat
+    const sel = document.getElementById('f-cat');
+    if (sel) {
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">Select…</option>' +
+            getCategories().map(c => `<option${cur===c?' selected':''}>${c}</option>`).join('');
+    }
+    // Update employee cat-select
+    renderCatSelect();
+}
 
 // ── STATE ──
 let meds = [];
@@ -857,22 +986,20 @@ function renderEmployee() {
     if (sortOrder === 'asc')  list.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
     if (sortOrder === 'desc') list.sort((a,b) => new Date(b.expiryDate) - new Date(a.expiryDate));
 
-    renderPills();
+    renderCatSelect();
     renderAlerts();
     renderGrid(list, q);
 }
 
-function renderPills() {
+function renderCatSelect() {
     const counts = {};
     meds.forEach(m => { counts[m.category] = (counts[m.category]||0)+1; });
-    const cats = ['All', ...Object.keys(counts)];
-    document.getElementById('cat-pills').innerHTML = cats.map(c => {
-        const n = c==='All' ? meds.length : counts[c];
-        return `<button class="cat-pill${activeCat===c?' active':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">
-            ${c==='All'?'🗂 ':catIcon(c)+' '}${c}
-            <span class="pill-count">${n}</span>
-        </button>`;
-    }).join('');
+    const cats = getCategories();
+    const sel = document.getElementById('cat-select');
+    if (!sel) return;
+    sel.innerHTML = `<option value="All">🗂 All (${meds.length})</option>` +
+        cats.map(c => `<option value="${c}"${activeCat===c?' selected':''}>${catIcon(c)} ${c} (${counts[c]||0})</option>`).join('');
+    sel.value = activeCat;
 }
 function setCat(c) { activeCat = c; renderEmployee(); }
 
@@ -962,8 +1089,17 @@ function gotoAdmin() {
     if (!adminAuthed) {
         document.getElementById('login-overlay').classList.remove('hidden');
     } else {
-        renderAdminTable();
+        document.getElementById('admin-tabs').classList.add('visible');
+        switchAdminTab('medicines');
     }
+}
+function switchAdminTab(tab) {
+    document.getElementById('a-content-medicines').style.display  = tab === 'medicines'  ? '' : 'none';
+    document.getElementById('a-content-categories').classList.toggle('active', tab === 'categories');
+    document.getElementById('tab-medicines').classList.toggle('active',  tab === 'medicines');
+    document.getElementById('tab-categories').classList.toggle('active', tab === 'categories');
+    if (tab === 'medicines')  renderAdminTable();
+    if (tab === 'categories') renderCategoriesTab();
 }
 function gotoEmployee() {
     document.getElementById('page-admin').classList.remove('active');
@@ -973,6 +1109,8 @@ function gotoEmployee() {
 function adminLogout() {
     adminAuthed = false;
     sessionStorage.removeItem('medistore_session');
+    document.getElementById('admin-tabs').classList.remove('visible');
+    switchAdminTab('medicines');
     document.getElementById('pw').value = '';
     document.getElementById('login-err').classList.remove('show');
     stopLockoutTimer();
@@ -1046,7 +1184,8 @@ async function doLogin(e) {
         stopLockoutTimer();
         updateAttemptDots();
         document.getElementById('login-overlay').classList.add('hidden');
-        renderAdminTable();
+        document.getElementById('admin-tabs').classList.add('visible');
+        switchAdminTab('medicines');
     } else {
         a.attempts = (a.attempts || 0) + 1;
         if (a.attempts >= MAX_ATTEMPTS) {
@@ -1241,6 +1380,66 @@ function renderAdminTable() {
                 <button class="btn-td" onclick="deleteMedicine('${m.id}')">Delete</button>
             </div></td>
         </tr>`;
+    }).join('');
+}
+
+// ── CATEGORY CRUD ──
+function addCategory(e) {
+    e.preventDefault();
+    const input = document.getElementById('new-cat-name');
+    const name  = input.value.trim();
+    const errEl = document.getElementById('cat-add-err');
+    errEl.style.display = 'none';
+
+    if (!name) return;
+    const cats = getCategories();
+    if (cats.some(c => c.toLowerCase() === name.toLowerCase())) {
+        errEl.textContent = 'This category already exists.';
+        errEl.style.display = 'block';
+        return;
+    }
+    cats.push(name);
+    saveCategories(cats);
+    input.value = '';
+    refreshCatDropdowns();
+    renderCategoriesTab();
+    toast(`Category "${name}" added`, 'success');
+}
+
+function deleteCategory(name) {
+    const inUse = meds.filter(m => m.category === name).length;
+    if (inUse) {
+        toast(`Cannot delete — ${inUse} medicine${inUse!==1?'s':''} use this category`, 'error');
+        return;
+    }
+    if (!confirm(`Delete category "${name}"? This cannot be undone.`)) return;
+    saveCategories(getCategories().filter(c => c !== name));
+    refreshCatDropdowns();
+    renderCategoriesTab();
+    toast(`Category "${name}" deleted`, 'info');
+}
+
+function renderCategoriesTab() {
+    const cats   = getCategories();
+    const counts = {};
+    meds.forEach(m => { counts[m.category] = (counts[m.category]||0)+1; });
+
+    document.getElementById('cat-list-count').textContent = `${cats.length} categor${cats.length!==1?'ies':'y'}`;
+
+    const listEl = document.getElementById('cat-list');
+    if (!cats.length) { listEl.innerHTML = '<div class="cat-empty">No categories found.</div>'; return; }
+
+    listEl.innerHTML = cats.map(c => {
+        const n = counts[c] || 0;
+        const canDel = n === 0;
+        return `<div class="cat-item">
+            <div class="cat-item-left">
+                <span class="cat-item-icon">${catIcon(c)}</span>
+                <span class="cat-item-name">${c}</span>
+                <span class="cat-item-count${n>0?' in-use':''}">${n} med${n!==1?'s':''}</span>
+            </div>
+            <button class="btn-del-cat" onclick="deleteCategory('${c.replace(/'/g,"\\'")}') " ${canDel?'':'disabled title="Remove all medicines from this category first"'}>Delete</button>
+        </div>`;
     }).join('');
 }
 
