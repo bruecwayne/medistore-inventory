@@ -353,6 +353,22 @@
             border-radius: 100px; font-size: 0.68rem; font-weight: 600;
         }
 
+        /* Composition & alternatives */
+        .card-extra {
+            padding: 10px 0 8px; margin-top: 2px;
+            border-top: 1px solid var(--grey-100);
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .extra-row { display: flex; flex-direction: column; gap: 4px; }
+        .extra-lbl { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--grey-400); }
+        .comp-val { font-size: 0.77rem; color: var(--grey-800); font-family: var(--font-mono); line-height: 1.4; }
+        .alt-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+        .alt-pill {
+            padding: 3px 9px; background: rgba(0,180,160,0.08);
+            border: 1px solid rgba(0,180,160,0.25); border-radius: 100px;
+            font-size: 0.66rem; font-weight: 600; color: var(--teal-dark);
+        }
+
         /* Empty state */
         .empty-state { grid-column: 1/-1; text-align: center; padding: 80px 20px; }
         .empty-icon  { font-size: 44px; margin-bottom: 14px; opacity: 0.35; }
@@ -801,6 +817,14 @@
                         <label class="f-lbl">Description</label>
                         <textarea class="f-textarea" id="f-desc" placeholder="Optional notes…"></textarea>
                     </div>
+                    <div class="fg full">
+                        <label class="f-lbl">Composition / Active Ingredients</label>
+                        <input type="text" class="f-input" id="f-comp" placeholder="e.g. Amoxicillin trihydrate 500mg">
+                    </div>
+                    <div class="fg full">
+                        <label class="f-lbl">Alternative Medicines <span style="font-weight:400;text-transform:none;font-size:0.65rem;">(comma-separated)</span></label>
+                        <input type="text" class="f-input" id="f-alts" placeholder="e.g. Ampicillin 500mg, Co-amoxiclav 625mg">
+                    </div>
                 </div>
                 <button type="submit" class="btn-submit" id="submit-btn">＋ Add Medicine</button>
                 <button type="button" class="btn-cancel" id="cancel-btn" onclick="cancelEdit()">✕ Cancel Edit</button>
@@ -872,26 +896,26 @@
 <script>
 // ── DATA ──
 const SAMPLE = [
-    { id:'s1',  name:'Amoxicillin 500mg',          category:'Antibiotics',             manufacturer:'Sun Pharma',       batchNumber:'SPA-2024-001', quantity:250, expiryDate:'2026-04-05', shelf:'A', row:'2', pos:'4',  price:12.50, description:'Broad-spectrum penicillin antibiotic' },
-    { id:'s2',  name:'Ciprofloxacin 250mg',         category:'Antibiotics',             manufacturer:'Cipla Ltd',        batchNumber:'CIP-2024-042', quantity:180, expiryDate:'2027-08-20', shelf:'A', row:'2', pos:'5',  price:18.00, description:'Fluoroquinolone antibiotic' },
-    { id:'s3',  name:'Azithromycin 500mg',           category:'Antibiotics',             manufacturer:'Alkem Labs',       batchNumber:'ALK-2024-088', quantity:120, expiryDate:'2026-04-18', shelf:'A', row:'3', pos:'1',  price:22.00, description:'Macrolide antibiotic for respiratory infections' },
-    { id:'s4',  name:'Ibuprofen 400mg',              category:'Pain Relief',             manufacturer:'Abbott India',     batchNumber:'ABT-2023-102', quantity:500, expiryDate:'2026-03-28', shelf:'B', row:'1', pos:'2',  price:8.00,  description:'NSAID for pain and inflammation' },
-    { id:'s5',  name:'Paracetamol 500mg',            category:'Pain Relief',             manufacturer:'GSK Pharma',       batchNumber:'GSK-2024-055', quantity:1000,expiryDate:'2027-12-31', shelf:'B', row:'1', pos:'1',  price:4.50,  description:'Analgesic and antipyretic' },
-    { id:'s6',  name:'Aspirin 75mg',                 category:'Pain Relief',             manufacturer:'Bayer AG',         batchNumber:'BAY-2024-033', quantity:300, expiryDate:'2026-09-15', shelf:'B', row:'1', pos:'3',  price:6.00,  description:'Low-dose antiplatelet therapy' },
-    { id:'s7',  name:'Vitamin C 500mg',              category:'Vitamins & Supplements',  manufacturer:'Himalaya Wellness',batchNumber:'HIM-2024-011', quantity:400, expiryDate:'2027-06-30', shelf:'C', row:'1', pos:'1',  price:15.00, description:'Ascorbic acid supplement' },
-    { id:'s8',  name:'Vitamin D3 60000 IU',          category:'Vitamins & Supplements',  manufacturer:'Mankind Pharma',   batchNumber:'MAN-2024-077', quantity:150, expiryDate:'2027-03-20', shelf:'C', row:'1', pos:'2',  price:35.00, description:'Cholecalciferol for bone health' },
-    { id:'s9',  name:'B-Complex Forte',              category:'Vitamins & Supplements',  manufacturer:'Pfizer India',     batchNumber:'PFZ-2024-029', quantity:200, expiryDate:'2026-11-30', shelf:'C', row:'1', pos:'3',  price:20.00, description:'Vitamin B complex for energy metabolism' },
-    { id:'s10', name:'Metoprolol 25mg',              category:'Cardiovascular',          manufacturer:'AstraZeneca',      batchNumber:'AZN-2024-015', quantity:180, expiryDate:'2027-05-10', shelf:'D', row:'2', pos:'1',  price:28.00, description:'Beta-blocker for hypertension' },
-    { id:'s11', name:'Atorvastatin 10mg',            category:'Cardiovascular',          manufacturer:'Lupin Ltd',        batchNumber:'LUP-2024-044', quantity:250, expiryDate:'2028-01-15', shelf:'D', row:'2', pos:'2',  price:45.00, description:'Statin for cholesterol management' },
-    { id:'s12', name:'Amlodipine 5mg',               category:'Cardiovascular',          manufacturer:'Torrent Pharma',   batchNumber:'TOR-2024-062', quantity:320, expiryDate:'2027-09-25', shelf:'D', row:'2', pos:'3',  price:15.00, description:'Calcium channel blocker' },
-    { id:'s13', name:'Metformin 500mg',              category:'Diabetes',                manufacturer:'USV Ltd',          batchNumber:'USV-2024-038', quantity:450, expiryDate:'2027-04-30', shelf:'E', row:'1', pos:'1',  price:10.00, description:'Biguanide for type 2 diabetes' },
-    { id:'s14', name:'Glipizide 5mg',                category:'Diabetes',                manufacturer:'Glenmark Pharma',  batchNumber:'GLN-2024-019', quantity:200, expiryDate:'2026-07-20', shelf:'E', row:'1', pos:'2',  price:25.00, description:'Sulfonylurea antidiabetic agent' },
-    { id:'s15', name:'Salbutamol 100mcg Inhaler',    category:'Respiratory',             manufacturer:'Cipla Ltd',        batchNumber:'CIP-2024-091', quantity:80,  expiryDate:'2026-05-15', shelf:'F', row:'1', pos:'1',  price:85.00, description:'Bronchodilator for asthma relief' },
-    { id:'s16', name:'Montelukast 10mg',             category:'Respiratory',             manufacturer:'Dr. Reddys',       batchNumber:'DRL-2024-053', quantity:160, expiryDate:'2027-10-12', shelf:'F', row:'1', pos:'2',  price:55.00, description:'Leukotriene antagonist for asthma' },
-    { id:'s17', name:'Cetirizine 10mg',              category:'Respiratory',             manufacturer:'Sun Pharma',       batchNumber:'SPA-2024-067', quantity:280, expiryDate:'2027-02-28', shelf:'F', row:'1', pos:'3',  price:9.00,  description:'Antihistamine for allergic rhinitis' },
-    { id:'s18', name:'Omeprazole 20mg',              category:'Gastrointestinal',        manufacturer:'Zydus Cadila',     batchNumber:'ZYD-2024-024', quantity:350, expiryDate:'2027-08-05', shelf:'G', row:'1', pos:'1',  price:18.00, description:'Proton pump inhibitor for acid reflux' },
-    { id:'s19', name:'Pantoprazole 40mg',            category:'Gastrointestinal',        manufacturer:'Nycomed Pharma',   batchNumber:'NYC-2024-031', quantity:220, expiryDate:'2028-03-10', shelf:'G', row:'1', pos:'2',  price:22.00, description:'PPI for gastric ulcer treatment' },
-    { id:'s20', name:'Clotrimazole 1% Cream',        category:'Dermatology',             manufacturer:'Johnson & Johnson',batchNumber:'JNJ-2024-008', quantity:100, expiryDate:'2026-12-20', shelf:'H', row:'2', pos:'1',  price:42.00, description:'Antifungal cream for skin infections' },
+    { id:'s1',  name:'Amoxicillin 500mg',          category:'Antibiotics',             manufacturer:'Sun Pharma',       batchNumber:'SPA-2024-001', quantity:250, expiryDate:'2026-04-05', shelf:'A', row:'2', pos:'4',  price:12.50, description:'Broad-spectrum penicillin antibiotic',         composition:'Amoxicillin trihydrate 500mg',                 alternatives:['Ampicillin 500mg','Co-amoxiclav 625mg'] },
+    { id:'s2',  name:'Ciprofloxacin 250mg',         category:'Antibiotics',             manufacturer:'Cipla Ltd',        batchNumber:'CIP-2024-042', quantity:180, expiryDate:'2027-08-20', shelf:'A', row:'2', pos:'5',  price:18.00, description:'Fluoroquinolone antibiotic',                   composition:'Ciprofloxacin hydrochloride 250mg',            alternatives:['Levofloxacin 500mg','Ofloxacin 200mg'] },
+    { id:'s3',  name:'Azithromycin 500mg',           category:'Antibiotics',             manufacturer:'Alkem Labs',       batchNumber:'ALK-2024-088', quantity:120, expiryDate:'2026-04-18', shelf:'A', row:'3', pos:'1',  price:22.00, description:'Macrolide antibiotic for respiratory infections',composition:'Azithromycin dihydrate 500mg',                 alternatives:['Clarithromycin 500mg','Erythromycin 500mg'] },
+    { id:'s4',  name:'Ibuprofen 400mg',              category:'Pain Relief',             manufacturer:'Abbott India',     batchNumber:'ABT-2023-102', quantity:500, expiryDate:'2026-03-28', shelf:'B', row:'1', pos:'2',  price:8.00,  description:'NSAID for pain and inflammation',              composition:'Ibuprofen 400mg',                              alternatives:['Naproxen 500mg','Diclofenac 50mg'] },
+    { id:'s5',  name:'Paracetamol 500mg',            category:'Pain Relief',             manufacturer:'GSK Pharma',       batchNumber:'GSK-2024-055', quantity:1000,expiryDate:'2027-12-31', shelf:'B', row:'1', pos:'1',  price:4.50,  description:'Analgesic and antipyretic',                    composition:'Paracetamol (Acetaminophen) 500mg',            alternatives:['Ibuprofen 400mg','Aspirin 325mg'] },
+    { id:'s6',  name:'Aspirin 75mg',                 category:'Pain Relief',             manufacturer:'Bayer AG',         batchNumber:'BAY-2024-033', quantity:300, expiryDate:'2026-09-15', shelf:'B', row:'1', pos:'3',  price:6.00,  description:'Low-dose antiplatelet therapy',                composition:'Acetylsalicylic acid 75mg',                    alternatives:['Clopidogrel 75mg','Ticagrelor 90mg'] },
+    { id:'s7',  name:'Vitamin C 500mg',              category:'Vitamins & Supplements',  manufacturer:'Himalaya Wellness',batchNumber:'HIM-2024-011', quantity:400, expiryDate:'2027-06-30', shelf:'C', row:'1', pos:'1',  price:15.00, description:'Ascorbic acid supplement',                     composition:'Ascorbic acid 500mg',                          alternatives:['Limcee 500mg','Celin 500mg'] },
+    { id:'s8',  name:'Vitamin D3 60000 IU',          category:'Vitamins & Supplements',  manufacturer:'Mankind Pharma',   batchNumber:'MAN-2024-077', quantity:150, expiryDate:'2027-03-20', shelf:'C', row:'1', pos:'2',  price:35.00, description:'Cholecalciferol for bone health',              composition:'Cholecalciferol 60000 IU',                     alternatives:['Calcitriol 0.25mcg','Ergocalciferol 50000 IU'] },
+    { id:'s9',  name:'B-Complex Forte',              category:'Vitamins & Supplements',  manufacturer:'Pfizer India',     batchNumber:'PFZ-2024-029', quantity:200, expiryDate:'2026-11-30', shelf:'C', row:'1', pos:'3',  price:20.00, description:'Vitamin B complex for energy metabolism',      composition:'B1, B2, B3, B5, B6, B9, B12 blend',           alternatives:['Neurobion Forte','Becosules'] },
+    { id:'s10', name:'Metoprolol 25mg',              category:'Cardiovascular',          manufacturer:'AstraZeneca',      batchNumber:'AZN-2024-015', quantity:180, expiryDate:'2027-05-10', shelf:'D', row:'2', pos:'1',  price:28.00, description:'Beta-blocker for hypertension',                composition:'Metoprolol succinate 25mg',                    alternatives:['Atenolol 25mg','Bisoprolol 2.5mg'] },
+    { id:'s11', name:'Atorvastatin 10mg',            category:'Cardiovascular',          manufacturer:'Lupin Ltd',        batchNumber:'LUP-2024-044', quantity:250, expiryDate:'2028-01-15', shelf:'D', row:'2', pos:'2',  price:45.00, description:'Statin for cholesterol management',            composition:'Atorvastatin calcium 10mg',                    alternatives:['Rosuvastatin 5mg','Simvastatin 10mg'] },
+    { id:'s12', name:'Amlodipine 5mg',               category:'Cardiovascular',          manufacturer:'Torrent Pharma',   batchNumber:'TOR-2024-062', quantity:320, expiryDate:'2027-09-25', shelf:'D', row:'2', pos:'3',  price:15.00, description:'Calcium channel blocker',                      composition:'Amlodipine besylate 5mg',                      alternatives:['Nifedipine 10mg','Felodipine 5mg'] },
+    { id:'s13', name:'Metformin 500mg',              category:'Diabetes',                manufacturer:'USV Ltd',          batchNumber:'USV-2024-038', quantity:450, expiryDate:'2027-04-30', shelf:'E', row:'1', pos:'1',  price:10.00, description:'Biguanide for type 2 diabetes',                composition:'Metformin hydrochloride 500mg',                alternatives:['Glipizide 5mg','Sitagliptin 50mg'] },
+    { id:'s14', name:'Glipizide 5mg',                category:'Diabetes',                manufacturer:'Glenmark Pharma',  batchNumber:'GLN-2024-019', quantity:200, expiryDate:'2026-07-20', shelf:'E', row:'1', pos:'2',  price:25.00, description:'Sulfonylurea antidiabetic agent',              composition:'Glipizide 5mg',                                alternatives:['Glibenclamide 5mg','Glimepiride 2mg'] },
+    { id:'s15', name:'Salbutamol 100mcg Inhaler',    category:'Respiratory',             manufacturer:'Cipla Ltd',        batchNumber:'CIP-2024-091', quantity:80,  expiryDate:'2026-05-15', shelf:'F', row:'1', pos:'1',  price:85.00, description:'Bronchodilator for asthma relief',             composition:'Salbutamol sulfate 100mcg/actuation',          alternatives:['Levosalbutamol 50mcg','Terbutaline 250mcg'] },
+    { id:'s16', name:'Montelukast 10mg',             category:'Respiratory',             manufacturer:'Dr. Reddys',       batchNumber:'DRL-2024-053', quantity:160, expiryDate:'2027-10-12', shelf:'F', row:'1', pos:'2',  price:55.00, description:'Leukotriene antagonist for asthma',            composition:'Montelukast sodium 10mg',                      alternatives:['Zafirlukast 20mg','Cetirizine 10mg'] },
+    { id:'s17', name:'Cetirizine 10mg',              category:'Respiratory',             manufacturer:'Sun Pharma',       batchNumber:'SPA-2024-067', quantity:280, expiryDate:'2027-02-28', shelf:'F', row:'1', pos:'3',  price:9.00,  description:'Antihistamine for allergic rhinitis',          composition:'Cetirizine dihydrochloride 10mg',              alternatives:['Loratadine 10mg','Fexofenadine 120mg'] },
+    { id:'s18', name:'Omeprazole 20mg',              category:'Gastrointestinal',        manufacturer:'Zydus Cadila',     batchNumber:'ZYD-2024-024', quantity:350, expiryDate:'2027-08-05', shelf:'G', row:'1', pos:'1',  price:18.00, description:'Proton pump inhibitor for acid reflux',        composition:'Omeprazole magnesium 20mg',                    alternatives:['Pantoprazole 40mg','Rabeprazole 20mg'] },
+    { id:'s19', name:'Pantoprazole 40mg',            category:'Gastrointestinal',        manufacturer:'Nycomed Pharma',   batchNumber:'NYC-2024-031', quantity:220, expiryDate:'2028-03-10', shelf:'G', row:'1', pos:'2',  price:22.00, description:'PPI for gastric ulcer treatment',              composition:'Pantoprazole sodium 40mg',                     alternatives:['Omeprazole 20mg','Esomeprazole 40mg'] },
+    { id:'s20', name:'Clotrimazole 1% Cream',        category:'Dermatology',             manufacturer:'Johnson & Johnson',batchNumber:'JNJ-2024-008', quantity:100, expiryDate:'2026-12-20', shelf:'H', row:'2', pos:'1',  price:42.00, description:'Antifungal cream for skin infections',         composition:'Clotrimazole 1% w/w',                          alternatives:['Miconazole 2% cream','Ketoconazole 2% cream'] },
 ];
 
 // ── CATEGORIES DATA ──
@@ -1071,6 +1095,11 @@ function buildCard(m, i) {
                 <div><div class="meta-lbl">Quantity</div><div class="meta-val qty">${m.quantity} units</div></div>
                 <div><div class="meta-lbl">Price</div><div class="meta-val">₹${parseFloat(m.price).toFixed(2)}</div></div>
             </div>
+            ${(m.composition || (m.alternatives && m.alternatives.length)) ? `
+            <div class="card-extra">
+                ${m.composition ? `<div class="extra-row"><div class="extra-lbl">Composition</div><div class="comp-val">${m.composition}</div></div>` : ''}
+                ${m.alternatives && m.alternatives.length ? `<div class="extra-row"><div class="extra-lbl">Alternatives</div><div class="alt-pills">${m.alternatives.map(a => `<span class="alt-pill">${a}</span>`).join('')}</div></div>` : ''}
+            </div>` : ''}
             <div class="card-foot">
                 <div class="shelf-tag">
                     <span class="si">📍</span>
@@ -1292,6 +1321,8 @@ function submitMedicine(e) {
         pos:          document.getElementById('f-pos').value.trim(),
         price:        parseFloat(document.getElementById('f-price').value),
         description:  document.getElementById('f-desc').value.trim(),
+        composition:  document.getElementById('f-comp').value.trim(),
+        alternatives: document.getElementById('f-alts').value.split(',').map(s => s.trim()).filter(Boolean),
     };
 
     if (editingId) {
@@ -1323,6 +1354,8 @@ function editMedicine(id) {
     document.getElementById('f-pos').value     = m.pos   || '';
     document.getElementById('f-price').value   = m.price;
     document.getElementById('f-desc').value    = m.description || '';
+    document.getElementById('f-comp').value    = m.composition || '';
+    document.getElementById('f-alts').value    = (m.alternatives || []).join(', ');
     document.getElementById('form-title').textContent = 'Edit Medicine';
     document.getElementById('form-icon').textContent  = '✎';
     document.getElementById('submit-btn').textContent = '✓ Update Medicine';
