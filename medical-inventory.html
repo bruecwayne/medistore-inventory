@@ -52,7 +52,50 @@
             --ease: 0.2s cubic-bezier(0.4,0,0.2,1);
         }
 
-        html { font-family: var(--font-body); color: var(--navy); background: var(--off-white); -webkit-font-smoothing: antialiased; }
+        /* ── DARK THEME OVERRIDES (employee view only) ── */
+        [data-theme="dark"] {
+            --white: #131e2e;
+            --off-white: #0d1520;
+            --grey-50: #111929;
+            --grey-100: #1c2d40;
+            --grey-200: #263d54;
+            --grey-400: #5a7a95;
+            --grey-600: #8aafc5;
+            --grey-800: #b8d4e8;
+            --navy: #d8eaf8;
+            --navy-mid: #7ab0d4;
+            --teal-pale: rgba(0,180,160,0.12);
+            --teal-dark: #00d4bc;
+            --critical-bg: rgba(220,38,38,0.12);
+            --critical-border: rgba(220,38,38,0.3);
+            --warning-bg: rgba(217,119,6,0.12);
+            --warning-border: rgba(217,119,6,0.3);
+            --safe-bg: rgba(5,150,105,0.12);
+            --safe-border: rgba(5,150,105,0.3);
+            --shadow: 0 2px 8px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2);
+            --shadow-md: 0 6px 20px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.5), 0 6px 16px rgba(0,0,0,0.3);
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            display: flex; align-items: center;
+            background: var(--grey-100); border-radius: 100px;
+            padding: 3px; gap: 2px; transition: background var(--ease);
+        }
+        .theme-btn {
+            padding: 5px 10px; border-radius: 100px; border: none;
+            background: transparent; font-size: 0.72rem; font-weight: 600;
+            color: var(--grey-600); transition: all var(--ease); cursor: pointer;
+            white-space: nowrap;
+        }
+        .theme-btn.active {
+            background: var(--white); color: var(--navy);
+            box-shadow: 0 1px 4px rgba(10,37,64,0.12);
+        }
+        [data-theme="dark"] .theme-btn.active { box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+
+        html { font-family: var(--font-body); color: var(--navy); background: var(--off-white); -webkit-font-smoothing: antialiased; transition: background var(--ease), color var(--ease); }
         button { font-family: var(--font-body); cursor: pointer; }
         input, select, textarea { font-family: var(--font-body); }
 
@@ -491,6 +534,11 @@
                     <div class="e-logo-name">MediStore</div>
                     <div class="e-logo-tag">Inventory System</div>
                 </div>
+            </div>
+            <div class="theme-toggle">
+                <button class="theme-btn" data-t="light" onclick="setTheme('light')" title="Light mode">☀ Light</button>
+                <button class="theme-btn" data-t="dark"  onclick="setTheme('dark')"  title="Dark mode">🌙 Dark</button>
+                <button class="theme-btn" data-t="auto"  onclick="setTheme('auto')"  title="Match system">🖥 Auto</button>
             </div>
             <button class="btn-admin" onclick="gotoAdmin()">⚙ Admin Panel</button>
         </div>
@@ -1176,6 +1224,24 @@ function renderAdminTable() {
     }).join('');
 }
 
+// ── THEME ──
+let currentTheme = 'auto';
+const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
+
+function applyTheme() {
+    const isDark = currentTheme === 'dark' || (currentTheme === 'auto' && darkMQ.matches);
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+}
+function setTheme(t) {
+    currentTheme = t;
+    localStorage.setItem('medistore_theme', t);
+    applyTheme();
+    document.querySelectorAll('.theme-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.t === t)
+    );
+}
+darkMQ.addEventListener('change', () => { if (currentTheme === 'auto') applyTheme(); });
+
 // ── INIT (must run after all functions are defined) ──
 (function() {
     const stored = localStorage.getItem('medistore_v2');
@@ -1187,6 +1253,7 @@ function renderAdminTable() {
         save();
     }
     initAuth();
+    setTheme(localStorage.getItem('medistore_theme') || 'auto');
     renderEmployee();
 })();
 </script>
