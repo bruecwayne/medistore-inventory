@@ -261,10 +261,71 @@
             transition: background var(--ease), transform var(--ease);
         }
         .btn-login:hover { background: var(--teal-light); transform: translateY(-1px); }
-        .login-err { font-size: 0.78rem; color: var(--critical); display: none; }
+        .login-err { font-size: 0.78rem; color: var(--critical); display: none; margin-top: 4px; }
         .login-err.show { display: block; }
         .login-hint { margin-top: 18px; font-size: 0.72rem; color: var(--admin-muted); }
         .login-hint code { color: var(--teal); }
+        .lockout-box {
+            display: none; margin-top: 10px; padding: 12px 16px;
+            background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3);
+            border-radius: var(--r-sm); text-align: center;
+        }
+        .lockout-box p { font-size: 0.78rem; color: var(--critical); margin-bottom: 4px; }
+        .lockout-timer { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 500; color: var(--critical); }
+        .attempts-bar {
+            display: flex; gap: 4px; justify-content: center; margin-top: 12px;
+        }
+        .attempt-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--admin-border); transition: background 0.3s;
+        }
+        .attempt-dot.used { background: var(--critical); }
+
+        /* Change password modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(5,13,26,0.85);
+            z-index: 600; display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-box {
+            background: var(--admin-card); border: 1px solid var(--admin-border);
+            border-radius: var(--r-lg); padding: 36px; width: 100%; max-width: 380px;
+        }
+        .modal-h {
+            font-family: var(--font-display); font-size: 1.1rem; font-weight: 700;
+            color: var(--admin-text); margin-bottom: 6px;
+        }
+        .modal-sub { font-size: 0.8rem; color: var(--admin-muted); margin-bottom: 22px; line-height: 1.5; }
+        .modal-form { display: flex; flex-direction: column; gap: 10px; }
+        .modal-err {
+            display: none; padding: 8px 12px; background: rgba(220,38,38,0.1);
+            border: 1px solid rgba(220,38,38,0.3); border-radius: var(--r-sm);
+            font-size: 0.78rem; color: var(--critical);
+        }
+        .modal-actions { display: flex; gap: 8px; margin-top: 4px; }
+        .btn-modal-submit {
+            flex: 1; padding: 11px; background: var(--teal); border: none;
+            border-radius: var(--r-sm); font-size: 0.875rem; font-weight: 700;
+            color: #fff; transition: background var(--ease);
+        }
+        .btn-modal-submit:hover { background: var(--teal-light); }
+        .btn-modal-cancel {
+            padding: 11px 18px; background: transparent;
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.875rem; font-weight: 600; color: var(--admin-muted);
+            transition: all var(--ease);
+        }
+        .btn-modal-cancel:hover { border-color: var(--critical); color: var(--critical); }
+        .btn-changepw {
+            display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+            background: transparent; border: 1.5px solid var(--admin-border);
+            border-radius: var(--r-sm); font-size: 0.78rem; font-weight: 600;
+            color: var(--admin-muted); transition: all var(--ease);
+        }
+        .btn-changepw:hover { border-color: var(--teal); color: var(--teal); }
+        .pw-strength { height: 3px; border-radius: 2px; margin-top: 4px; background: var(--admin-border); overflow: hidden; }
+        .pw-strength-fill { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; border-radius: 2px; }
 
         /* Admin header */
         .a-header {
@@ -464,17 +525,55 @@
         <div class="login-box">
             <div class="login-icon">🔐</div>
             <div class="login-h">Admin Access</div>
-            <div class="login-sub">Sign in to manage the inventory. Enter your admin password below.</div>
+            <div class="login-sub">Sign in to manage the inventory. Your session will end when you close this tab.</div>
             <form class="login-form" onsubmit="doLogin(event)">
                 <input type="text" class="a-input" placeholder="Username" value="admin" readonly>
-                <input type="password" class="a-input" id="pw" placeholder="Password">
-                <p class="login-err" id="login-err">Incorrect password — please try again.</p>
-                <button type="submit" class="btn-login">Sign In →</button>
+                <input type="password" class="a-input" id="pw" placeholder="Password" oninput="clearLoginErr()">
+                <p class="login-err" id="login-err"></p>
+                <div class="lockout-box" id="lockout-box">
+                    <p>Too many failed attempts. Try again in:</p>
+                    <div class="lockout-timer" id="lockout-timer">5:00</div>
+                </div>
+                <div class="attempts-bar" id="attempts-bar">
+                    <div class="attempt-dot" id="dot-1"></div>
+                    <div class="attempt-dot" id="dot-2"></div>
+                    <div class="attempt-dot" id="dot-3"></div>
+                    <div class="attempt-dot" id="dot-4"></div>
+                    <div class="attempt-dot" id="dot-5"></div>
+                </div>
+                <button type="submit" class="btn-login" id="login-btn">Sign In →</button>
             </form>
-            <p class="login-hint">Demo credentials — password: <code>admin123</code></p>
             <p style="margin-top:14px">
                 <button onclick="gotoEmployee()" style="background:none;border:none;color:var(--admin-muted);font-size:0.75rem;cursor:pointer;text-decoration:underline">← Back to Employee View</button>
             </p>
+        </div>
+    </div>
+
+    <!-- Change Password modal -->
+    <div class="modal-overlay hidden" id="changepw-modal">
+        <div class="modal-box">
+            <div class="modal-h">🔑 Change Password</div>
+            <div class="modal-sub">Your new password must be at least 8 characters. You'll use it on your next login.</div>
+            <form class="modal-form" onsubmit="submitChangePw(event)">
+                <div class="fg full">
+                    <label class="f-lbl">Current Password</label>
+                    <input type="password" class="f-input" id="cp-current" placeholder="Enter current password" required>
+                </div>
+                <div class="fg full">
+                    <label class="f-lbl">New Password</label>
+                    <input type="password" class="f-input" id="cp-new" placeholder="Min. 8 characters" required oninput="updatePwStrength()">
+                    <div class="pw-strength"><div class="pw-strength-fill" id="pw-strength-fill"></div></div>
+                </div>
+                <div class="fg full">
+                    <label class="f-lbl">Confirm New Password</label>
+                    <input type="password" class="f-input" id="cp-confirm" placeholder="Re-enter new password" required>
+                </div>
+                <div class="modal-err" id="cp-err"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-modal-submit">Update Password</button>
+                    <button type="button" class="btn-modal-cancel" onclick="closeChangePw()">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -487,8 +586,9 @@
                 <span class="a-badge">Admin</span>
             </div>
             <div class="a-header-btns">
-                <button class="btn-back"   onclick="gotoEmployee()">← Employee View</button>
-                <button class="btn-logout" onclick="adminLogout()">🔒 Logout</button>
+                <button class="btn-back"     onclick="gotoEmployee()">← Employee View</button>
+                <button class="btn-changepw" onclick="openChangePw()">🔑 Change Password</button>
+                <button class="btn-logout"   onclick="adminLogout()">🔒 Logout</button>
             </div>
         </div>
     </header>
@@ -804,24 +904,169 @@ function gotoEmployee() {
 }
 function adminLogout() {
     adminAuthed = false;
+    sessionStorage.removeItem('medistore_session');
     document.getElementById('pw').value = '';
     document.getElementById('login-err').classList.remove('show');
+    stopLockoutTimer();
+    updateAttemptDots();
+    if (isLockedOut()) startLockoutTimer();
     document.getElementById('login-overlay').classList.remove('hidden');
 }
 
 // ── AUTH ──
-function doLogin(e) {
-    e.preventDefault();
-    if (document.getElementById('pw').value === 'admin123') {
+const DEFAULT_PW_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'; // SHA-256 of 'admin123'
+const MAX_ATTEMPTS    = 5;
+const LOCKOUT_MS      = 5 * 60 * 1000; // 5 minutes
+let lockoutInterval   = null;
+
+async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function getAuth() {
+    try { return JSON.parse(localStorage.getItem('medistore_auth') || '{}'); } catch { return {}; }
+}
+function saveAuth(obj) { localStorage.setItem('medistore_auth', JSON.stringify(obj)); }
+
+function initAuth() {
+    const a = getAuth();
+    if (!a.pwHash) { a.pwHash = DEFAULT_PW_HASH; saveAuth(a); }
+    // Restore session if tab is still open
+    if (sessionStorage.getItem('medistore_session') === '1') {
         adminAuthed = true;
+    }
+    updateAttemptDots();
+    if (isLockedOut()) startLockoutTimer();
+}
+
+function isLockedOut() {
+    const a = getAuth();
+    if (!a.lockUntil) return false;
+    if (Date.now() < a.lockUntil) return true;
+    // Expired — clear it
+    a.lockUntil = null; a.attempts = 0; saveAuth(a);
+    return false;
+}
+
+function updateAttemptDots() {
+    const a = getAuth();
+    const used = a.attempts || 0;
+    for (let i = 1; i <= MAX_ATTEMPTS; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (dot) dot.classList.toggle('used', i <= used);
+    }
+}
+
+function clearLoginErr() {
+    document.getElementById('login-err').classList.remove('show');
+}
+
+async function doLogin(e) {
+    e.preventDefault();
+    if (isLockedOut()) { startLockoutTimer(); return; }
+
+    const pw   = document.getElementById('pw').value;
+    const a    = getAuth();
+    const hash = await sha256(pw);
+    document.getElementById('pw').value = '';
+
+    if (hash === a.pwHash) {
+        a.attempts = 0; a.lockUntil = null; saveAuth(a);
+        sessionStorage.setItem('medistore_session', '1');
+        adminAuthed = true;
+        stopLockoutTimer();
+        updateAttemptDots();
         document.getElementById('login-overlay').classList.add('hidden');
         renderAdminTable();
     } else {
-        const err = document.getElementById('login-err');
-        err.classList.add('show');
-        document.getElementById('pw').value = '';
-        setTimeout(() => err.classList.remove('show'), 3000);
+        a.attempts = (a.attempts || 0) + 1;
+        if (a.attempts >= MAX_ATTEMPTS) {
+            a.lockUntil = Date.now() + LOCKOUT_MS;
+        }
+        saveAuth(a);
+        updateAttemptDots();
+        if (isLockedOut()) {
+            startLockoutTimer();
+        } else {
+            const remaining = MAX_ATTEMPTS - a.attempts;
+            const err = document.getElementById('login-err');
+            err.textContent = `Incorrect password — ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`;
+            err.classList.add('show');
+        }
     }
+}
+
+function startLockoutTimer() {
+    const box = document.getElementById('lockout-box');
+    const btn = document.getElementById('login-btn');
+    box.style.display = 'block';
+    if (btn) btn.disabled = true;
+    stopLockoutTimer();
+    lockoutInterval = setInterval(() => {
+        const ms = Math.max(0, (getAuth().lockUntil || 0) - Date.now());
+        const m  = Math.floor(ms / 60000);
+        const s  = Math.floor((ms % 60000) / 1000);
+        document.getElementById('lockout-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        if (ms <= 0) {
+            stopLockoutTimer();
+            if (btn) btn.disabled = false;
+            updateAttemptDots();
+        }
+    }, 500);
+}
+
+function stopLockoutTimer() {
+    if (lockoutInterval) { clearInterval(lockoutInterval); lockoutInterval = null; }
+    const box = document.getElementById('lockout-box');
+    if (box) box.style.display = 'none';
+}
+
+// ── CHANGE PASSWORD ──
+function openChangePw() {
+    document.getElementById('changepw-modal').classList.remove('hidden');
+    ['cp-current','cp-new','cp-confirm'].forEach(id => document.getElementById(id).value = '');
+    const err = document.getElementById('cp-err');
+    err.style.display = 'none';
+    document.getElementById('pw-strength-fill').style.width = '0%';
+}
+function closeChangePw() {
+    document.getElementById('changepw-modal').classList.add('hidden');
+}
+function updatePwStrength() {
+    const pw  = document.getElementById('cp-new').value;
+    const bar = document.getElementById('pw-strength-fill');
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const pct    = (score / 5) * 100;
+    const colors = ['#dc2626','#f97316','#eab308','#22c55e','#059669'];
+    bar.style.width      = pct + '%';
+    bar.style.background = colors[Math.max(0, score - 1)] || colors[0];
+}
+async function submitChangePw(e) {
+    e.preventDefault();
+    const current  = document.getElementById('cp-current').value;
+    const newPw    = document.getElementById('cp-new').value;
+    const confirm  = document.getElementById('cp-confirm').value;
+    const errEl    = document.getElementById('cp-err');
+
+    const showErr = (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; };
+
+    if (newPw.length < 8)      return showErr('New password must be at least 8 characters.');
+    if (newPw !== confirm)      return showErr('Passwords do not match.');
+
+    const a = getAuth();
+    const currentHash = await sha256(current);
+    if (currentHash !== a.pwHash) return showErr('Current password is incorrect.');
+
+    a.pwHash = await sha256(newPw);
+    saveAuth(a);
+    closeChangePw();
+    toast('Password updated successfully', 'success');
 }
 
 // ── ADMIN CRUD ──
@@ -941,6 +1186,7 @@ function renderAdminTable() {
         meds = JSON.parse(JSON.stringify(SAMPLE));
         save();
     }
+    initAuth();
     renderEmployee();
 })();
 </script>
