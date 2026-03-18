@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediStore — Inventory System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --teal: #00b4a0;
+            --teal-light: #00d4bc;
+            --teal-dark: #007a6e;
+            --teal-pale: #e6f7f5;
+            --navy: #0a2540;
+            --navy-mid: #0f3460;
+            --white: #ffffff;
+            --off-white: #f4f7f9;
+            --grey-50: #f8fafb;
+            --grey-100: #e8edf2;
+            --grey-200: #cdd6e0;
+            --grey-400: #8a9bb0;
+            --grey-600: #4a6080;
+            --grey-800: #243550;
+            --critical: #dc2626;
+            --critical-bg: #fef2f2;
+            --critical-border: #fecaca;
+            --warning: #d97706;
+            --warning-bg: #fffbeb;
+            --warning-border: #fde68a;
+            --safe: #059669;
+            --safe-bg: #ecfdf5;
+            --safe-border: #a7f3d0;
+            --admin-bg: #050d1a;
+            --admin-surface: #0b1929;
+            --admin-card: #0f2035;
+            --admin-border: #162d47;
+            --admin-text: #d8e8f5;
+            --admin-muted: #4a6a85;
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'DM Mono', monospace;
+            --r: 12px;
+            --r-sm: 6px;
+            --r-lg: 18px;
+            --shadow: 0 2px 8px rgba(10,37,64,0.08), 0 1px 3px rgba(10,37,64,0.05);
+            --shadow-md: 0 6px 20px rgba(10,37,64,0.12), 0 2px 6px rgba(10,37,64,0.07);
+            --shadow-lg: 0 16px 48px rgba(10,37,64,0.18), 0 6px 16px rgba(10,37,64,0.08);
+            --ease: 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        html { font-family: var(--font-body); color: var(--navy); background: var(--off-white); -webkit-font-smoothing: antialiased; }
+        button { font-family: var(--font-body); cursor: pointer; }
+        input, select, textarea { font-family: var(--font-body); }
+
+        .page { display: none; min-height: 100vh; }
+        .page.active { display: block; }
+
+        /* ── TOASTS ── */
+        #toasts { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            padding: 11px 18px; border-radius: var(--r-sm); font-size: 0.83rem; font-weight: 500;
+            color: #fff; display: flex; align-items: center; gap: 8px;
+            animation: tIn 0.3s ease, tOut 0.3s ease 2.7s forwards;
+            box-shadow: var(--shadow-lg); max-width: 300px;
+        }
+        .toast.success { background: var(--safe); }
+        .toast.error   { background: var(--critical); }
+        .toast.info    { background: var(--teal); }
+        @keyframes tIn  { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes tOut { from { opacity: 1; } to { opacity: 0; transform: translateX(110%); } }
+
+        /* ══════════════════════════════════════════
+           EMPLOYEE VIEW
+        ══════════════════════════════════════════ */
+        #page-employee { background: var(--off-white); }
+
+        /* Header */
+        .e-header {
+            background: var(--white);
+            border-bottom: 1px solid var(--grey-100);
+            position: sticky; top: 0; z-index: 200;
+            box-shadow: 0 1px 0 var(--grey-100), 0 2px 10px rgba(10,37,64,0.05);
+        }
+        .e-header-inner {
+            max-width: 1440px; margin: 0 auto; padding: 0 36px;
+            height: 68px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .e-logo { display: flex; align-items: center; gap: 12px; }
+        .e-logo-mark {
+            width: 44px; height: 44px; background: var(--teal);
+            border-radius: 11px; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .e-logo-name { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; line-height: 1; }
+        .e-logo-tag  { font-size: 0.65rem; font-weight: 600; color: var(--grey-400); text-transform: uppercase; letter-spacing: 0.1em; line-height: 1.4; }
+        .btn-admin {
+            display: flex; align-items: center; gap: 7px;
+            padding: 9px 20px; background: var(--navy); color: #fff;
+            border: none; border-radius: var(--r-sm); font-size: 0.8rem; font-weight: 600;
+            letter-spacing: 0.01em; transition: background var(--ease);
+        }
+        .btn-admin:hover { background: var(--navy-mid); }
+
+        /* Controls */
+        .e-controls { background: var(--off-white); max-width: 1440px; margin: 0 auto; padding: 20px 36px 0; }
+        .e-controls-top { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+
+        .search-wrap { flex: 1; min-width: 240px; position: relative; }
+        .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--grey-400); pointer-events: none; font-size: 15px; }
+        .search-input {
+            width: 100%; padding: 10px 14px 10px 40px;
+            background: var(--white); border: 1.5px solid var(--grey-100);
+            border-radius: var(--r-sm); font-size: 0.875rem; color: var(--navy); outline: none;
+            transition: border-color var(--ease), box-shadow var(--ease);
+        }
+        .search-input::placeholder { color: var(--grey-400); }
+        .search-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,160,0.1); }
+
+        .sort-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .sort-lbl { font-size: 0.72rem; font-weight: 700; color: var(--grey-600); text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; }
+        .btn-sort {
+            display: flex; align-items: center; gap: 5px; padding: 8px 13px;
+            background: var(--white); border: 1.5px solid var(--grey-100);
+            border-radius: var(--r-sm); font-size: 0.78rem; font-weight: 600; color: var(--grey-600);
+            transition: all var(--ease);
+        }
+        .btn-sort:hover { border-color: var(--teal); color: var(--teal); }
+        .btn-sort.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+        /* Category pills */
+        .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 16px; }
+        .cat-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 13px; background: var(--white);
+            border: 1.5px solid var(--grey-100); border-radius: 100px;
+            font-size: 0.78rem; font-weight: 500; color: var(--grey-600);
+            transition: all var(--ease); white-space: nowrap;
+        }
+        .cat-pill:hover { border-color: var(--teal); color: var(--teal-dark); }
+        .cat-pill.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+        .pill-count {
+            padding: 1px 6px; border-radius: 100px; font-size: 0.68rem; font-weight: 700;
+            background: rgba(255,255,255,0.25);
+        }
+        .cat-pill:not(.active) .pill-count { background: var(--grey-100); color: var(--grey-600); }
+
+        /* Alert chips */
+        .e-alerts { max-width: 1440px; margin: 0 auto; padding: 0 36px 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .alert-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 100px; font-size: 0.73rem; font-weight: 600; border: 1px solid;
+        }
+        .alert-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .alert-chip.critical { background: var(--critical-bg); color: var(--critical); border-color: var(--critical-border); }
+        .alert-chip.warning  { background: var(--warning-bg);  color: var(--warning);  border-color: var(--warning-border); }
+        .alert-chip.total    { background: var(--teal-pale);    color: var(--teal-dark); border-color: rgba(0,180,160,0.25); }
+
+        /* Main grid */
+        .e-main { max-width: 1440px; margin: 0 auto; padding: 0 36px 60px; }
+        .section-hd {
+            font-family: var(--font-display); font-size: 0.95rem; font-weight: 700;
+            color: var(--grey-600); margin-bottom: 14px; margin-top: 28px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .section-hd::after { content: ''; flex: 1; height: 1px; background: var(--grey-100); }
+        .med-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 14px; margin-bottom: 8px;
+        }
+
+        /* Medicine Card */
+        .med-card {
+            background: var(--white); border-radius: var(--r);
+            border: 1.5px solid var(--grey-100); overflow: hidden;
+            transition: transform var(--ease), box-shadow var(--ease), border-color var(--ease);
+            animation: cardIn 0.35s ease both;
+        }
+        .med-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--grey-200); }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card-ribbon { height: 4px; }
+        .card-ribbon.critical { background: linear-gradient(90deg, #dc2626, #f87171); }
+        .card-ribbon.warning  { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .card-ribbon.safe     { background: linear-gradient(90deg, #059669, #34d399); }
+
+        .card-body { padding: 16px 18px 14px; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
+        .med-name { font-family: var(--font-display); font-size: 0.97rem; font-weight: 700; color: var(--navy); line-height: 1.3; flex: 1; }
+        .exp-badge {
+            flex-shrink: 0; padding: 3px 8px; border-radius: 100px;
+            font-family: var(--font-mono); font-size: 0.68rem; font-weight: 500; border: 1px solid;
+        }
+        .exp-badge.critical { background: var(--critical-bg); color: var(--critical); border-color: var(--critical-border); }
+        .exp-badge.warning  { background: var(--warning-bg);  color: var(--warning);  border-color: var(--warning-border); }
+        .exp-badge.safe     { background: var(--safe-bg);      color: var(--safe);     border-color: var(--safe-border); }
+
+        .card-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .meta-lbl { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--grey-400); margin-bottom: 2px; }
+        .meta-val { font-family: var(--font-mono); font-size: 0.8rem; color: var(--grey-800); }
+        .meta-val.qty { font-size: 0.95rem; font-weight: 500; color: var(--navy); font-family: var(--font-display); }
+
+        .card-foot {
+            display: flex; align-items: center; justify-content: space-between;
+            padding-top: 10px; border-top: 1px solid var(--grey-100);
+        }
+        .shelf-tag {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 10px; background: var(--navy); border-radius: 6px; color: #fff;
+        }
+        .shelf-tag .si { font-size: 10px; opacity: 0.6; }
+        .shelf-tag .st { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.04em; }
+        .cat-tag {
+            padding: 4px 10px; background: var(--teal-pale); color: var(--teal-dark);
+            border-radius: 100px; font-size: 0.68rem; font-weight: 600;
+        }
+
+        /* Empty state */
+        .empty-state { grid-column: 1/-1; text-align: center; padding: 80px 20px; }
+        .empty-icon  { font-size: 44px; margin-bottom: 14px; opacity: 0.35; }
+        .empty-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--grey-600); margin-bottom: 6px; }
+        .empty-desc  { font-size: 0.85rem; color: var(--grey-400); }
+
+        /* ══════════════════════════════════════════
+           ADMIN VIEW
+        ══════════════════════════════════════════ */
+        #page-admin { background: var(--admin-bg); min-height: 100vh; }
+
+        /* Login overlay */
+        .login-overlay {
+            position: fixed; inset: 0; background: var(--admin-bg);
+            z-index: 500; display: flex; align-items: center; justify-content: center;
+        }
+        .login-overlay.hidden { display: none; }
+        .login-box {
+            background: var(--admin-card); border: 1px solid var(--admin-border);
+            border-radius: var(--r-lg); padding: 48px 44px; width: 100%; max-width: 420px; text-align: center;
+        }
+        .login-icon {
+            width: 70px; height: 70px; background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            border-radius: 18px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px; font-size: 30px;
+        }
+        .login-h { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--admin-text); margin-bottom: 6px; }
+        .login-sub { font-size: 0.83rem; color: var(--admin-muted); margin-bottom: 32px; line-height: 1.5; }
+        .login-form { display: flex; flex-direction: column; gap: 10px; }
+        .a-input {
+            width: 100%; padding: 11px 14px; background: var(--admin-bg);
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.875rem; color: var(--admin-text); outline: none;
+            transition: border-color var(--ease);
+        }
+        .a-input:focus { border-color: var(--teal); }
+        .a-input::placeholder { color: var(--admin-muted); }
+        .btn-login {
+            padding: 12px; background: var(--teal); border: none; border-radius: var(--r-sm);
+            color: #fff; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.01em;
+            transition: background var(--ease), transform var(--ease);
+        }
+        .btn-login:hover { background: var(--teal-light); transform: translateY(-1px); }
+        .login-err { font-size: 0.78rem; color: var(--critical); display: none; }
+        .login-err.show { display: block; }
+        .login-hint { margin-top: 18px; font-size: 0.72rem; color: var(--admin-muted); }
+        .login-hint code { color: var(--teal); }
+
+        /* Admin header */
+        .a-header {
+            background: var(--admin-card); border-bottom: 1px solid var(--admin-border);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .a-header-inner {
+            max-width: 1440px; margin: 0 auto; padding: 0 36px;
+            height: 62px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .a-logo { display: flex; align-items: center; gap: 10px; }
+        .a-logo-mark { width: 34px; height: 34px; background: var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .a-logo-name { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: var(--admin-text); }
+        .a-badge {
+            padding: 2px 8px; background: rgba(0,180,160,0.12); border: 1px solid rgba(0,180,160,0.3);
+            border-radius: 100px; font-size: 0.62rem; font-weight: 700; color: var(--teal);
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .a-header-btns { display: flex; gap: 8px; }
+        .btn-back, .btn-logout {
+            display: flex; align-items: center; gap: 6px;
+            padding: 7px 14px; background: transparent;
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.78rem; font-weight: 600; color: var(--admin-muted);
+            transition: all var(--ease);
+        }
+        .btn-back:hover   { border-color: var(--teal); color: var(--teal); }
+        .btn-logout:hover { border-color: var(--critical); color: var(--critical); }
+
+        /* Admin layout */
+        .a-content {
+            max-width: 1440px; margin: 0 auto; padding: 28px 36px 60px;
+            display: grid; grid-template-columns: 400px 1fr; gap: 22px; align-items: start;
+        }
+
+        /* Form card */
+        .form-card {
+            background: var(--admin-card); border: 1px solid var(--admin-border);
+            border-radius: var(--r); padding: 26px; position: sticky; top: 82px;
+        }
+        .form-card-h {
+            font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+            color: var(--admin-text); margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+        .fg { display: flex; flex-direction: column; gap: 5px; }
+        .fg.full { grid-column: 1/-1; }
+        .fg.triple { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .f-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--admin-muted); }
+        .f-input, .f-select, .f-textarea {
+            width: 100%; padding: 8px 11px;
+            background: var(--admin-bg); border: 1.5px solid var(--admin-border);
+            border-radius: var(--r-sm); font-size: 0.83rem; color: var(--admin-text); outline: none;
+            transition: border-color var(--ease), box-shadow var(--ease);
+        }
+        .f-input:focus, .f-select:focus, .f-textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,160,0.1); }
+        .f-input::placeholder { color: var(--admin-muted); }
+        .f-select option { background: var(--admin-card); }
+        .f-textarea { resize: vertical; min-height: 64px; }
+        .shelf-hint { font-size: 0.66rem; color: var(--admin-muted); margin-top: 3px; }
+
+        .btn-submit {
+            width: 100%; margin-top: 14px; padding: 11px; background: var(--teal); border: none;
+            border-radius: var(--r-sm); font-size: 0.875rem; font-weight: 700; color: #fff;
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+            transition: background var(--ease), transform var(--ease);
+        }
+        .btn-submit:hover { background: var(--teal-light); transform: translateY(-1px); }
+        .btn-cancel {
+            width: 100%; margin-top: 7px; padding: 9px; background: transparent;
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.83rem; font-weight: 600; color: var(--admin-muted);
+            display: none; transition: all var(--ease);
+        }
+        .btn-cancel.show { display: block; }
+        .btn-cancel:hover { border-color: var(--critical); color: var(--critical); }
+
+        /* Table card */
+        .table-card {
+            background: var(--admin-card); border: 1px solid var(--admin-border);
+            border-radius: var(--r); overflow: hidden;
+        }
+        .table-head {
+            padding: 18px 22px; border-bottom: 1px solid var(--admin-border);
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        }
+        .table-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--admin-text); }
+        .table-sub { font-family: var(--font-mono); font-size: 0.75rem; color: var(--admin-muted); margin-top: 2px; }
+        .a-search {
+            padding: 7px 12px; background: var(--admin-bg);
+            border: 1.5px solid var(--admin-border); border-radius: var(--r-sm);
+            font-size: 0.78rem; color: var(--admin-text); outline: none; width: 200px;
+            transition: border-color var(--ease);
+        }
+        .a-search:focus { border-color: var(--teal); }
+        .a-search::placeholder { color: var(--admin-muted); }
+
+        .tbl-wrap { overflow-x: auto; }
+        .inv-tbl { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .inv-tbl th {
+            padding: 9px 16px; text-align: left;
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+            color: var(--admin-muted); background: rgba(0,0,0,0.25);
+            border-bottom: 1px solid var(--admin-border); white-space: nowrap;
+        }
+        .inv-tbl td {
+            padding: 11px 16px; font-size: 0.8rem; color: var(--admin-text);
+            border-bottom: 1px solid rgba(22,45,71,0.5); vertical-align: middle;
+        }
+        .inv-tbl tr:last-child td { border-bottom: none; }
+        .inv-tbl tr:hover td { background: rgba(255,255,255,0.02); }
+        .mono { font-family: var(--font-mono); font-size: 0.76rem !important; }
+        .sdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+        .sdot.critical { background: var(--critical); }
+        .sdot.warning  { background: var(--warning); }
+        .sdot.safe     { background: var(--safe); }
+        .shelf-pill {
+            padding: 2px 7px; background: rgba(255,255,255,0.06);
+            border: 1px solid var(--admin-border); border-radius: 4px;
+            font-family: var(--font-mono); font-size: 0.7rem; color: var(--admin-text);
+        }
+        .t-actions { display: flex; gap: 5px; }
+        .btn-te, .btn-td {
+            padding: 4px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; border: none;
+            transition: all var(--ease);
+        }
+        .btn-te { background: rgba(0,180,160,0.12); color: var(--teal); }
+        .btn-te:hover { background: rgba(0,180,160,0.28); }
+        .btn-td { background: rgba(220,38,38,0.1); color: var(--critical); }
+        .btn-td:hover { background: rgba(220,38,38,0.25); }
+        .tbl-empty { text-align: center; padding: 56px 20px; }
+        .tbl-empty p { color: var(--admin-muted); font-size: 0.85rem; }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--grey-200); border-radius: 3px; }
+        #page-admin ::-webkit-scrollbar-thumb { background: var(--admin-border); }
+
+        @media (max-width: 960px) {
+            .a-content { grid-template-columns: 1fr; }
+            .form-card { position: static; }
+        }
+        @media (max-width: 640px) {
+            .e-header-inner, .e-controls, .e-main, .e-alerts { padding-left: 16px; padding-right: 16px; }
+            .e-controls-top { flex-direction: column; align-items: stretch; }
+            .sort-group { flex-wrap: wrap; }
+            .med-grid { grid-template-columns: 1fr; }
+            .a-content { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div id="toasts"></div>
+
+<!-- ══════════════ EMPLOYEE PAGE ══════════════ -->
+<div id="page-employee" class="page active">
+    <header class="e-header">
+        <div class="e-header-inner">
+            <div class="e-logo">
+                <div class="e-logo-mark">⚕</div>
+                <div>
+                    <div class="e-logo-name">MediStore</div>
+                    <div class="e-logo-tag">Inventory System</div>
+                </div>
+            </div>
+            <button class="btn-admin" onclick="gotoAdmin()">⚙ Admin Panel</button>
+        </div>
+    </header>
+
+    <div class="e-controls">
+        <div class="e-controls-top">
+            <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="e-search"
+                    placeholder="Search medicines, manufacturers, batch numbers…" oninput="renderEmployee()">
+            </div>
+            <div class="sort-group">
+                <span class="sort-lbl">Sort Expiry:</span>
+                <button class="btn-sort" id="s-asc"  onclick="setSort('asc')">↑ Earliest</button>
+                <button class="btn-sort" id="s-desc" onclick="setSort('desc')">↓ Latest</button>
+                <button class="btn-sort active" id="s-none" onclick="setSort('none')">Default</button>
+            </div>
+        </div>
+        <div class="cat-pills" id="cat-pills"></div>
+    </div>
+
+    <div class="e-alerts" id="e-alerts"></div>
+    <main class="e-main" id="e-main"></main>
+</div>
+
+<!-- ══════════════ ADMIN PAGE ══════════════ -->
+<div id="page-admin" class="page">
+
+    <!-- Login overlay -->
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-box">
+            <div class="login-icon">🔐</div>
+            <div class="login-h">Admin Access</div>
+            <div class="login-sub">Sign in to manage the inventory. Enter your admin password below.</div>
+            <form class="login-form" onsubmit="doLogin(event)">
+                <input type="text" class="a-input" placeholder="Username" value="admin" readonly>
+                <input type="password" class="a-input" id="pw" placeholder="Password">
+                <p class="login-err" id="login-err">Incorrect password — please try again.</p>
+                <button type="submit" class="btn-login">Sign In →</button>
+            </form>
+            <p class="login-hint">Demo credentials — password: <code>admin123</code></p>
+            <p style="margin-top:14px">
+                <button onclick="gotoEmployee()" style="background:none;border:none;color:var(--admin-muted);font-size:0.75rem;cursor:pointer;text-decoration:underline">← Back to Employee View</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Admin header -->
+    <header class="a-header">
+        <div class="a-header-inner">
+            <div class="a-logo">
+                <div class="a-logo-mark">⚕</div>
+                <div class="a-logo-name">MediStore</div>
+                <span class="a-badge">Admin</span>
+            </div>
+            <div class="a-header-btns">
+                <button class="btn-back"   onclick="gotoEmployee()">← Employee View</button>
+                <button class="btn-logout" onclick="adminLogout()">🔒 Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin content -->
+    <div class="a-content">
+
+        <!-- Form -->
+        <div class="form-card">
+            <div class="form-card-h"><span id="form-icon">＋</span> <span id="form-title">Add New Medicine</span></div>
+            <form id="med-form" onsubmit="submitMedicine(event)">
+                <input type="hidden" id="edit-id">
+                <div class="form-grid">
+                    <div class="fg full">
+                        <label class="f-lbl">Medicine Name *</label>
+                        <input type="text" class="f-input" id="f-name" placeholder="e.g. Amoxicillin 500mg" required>
+                    </div>
+                    <div class="fg">
+                        <label class="f-lbl">Category *</label>
+                        <select class="f-select" id="f-cat" required>
+                            <option value="">Select…</option>
+                            <option>Antibiotics</option>
+                            <option>Pain Relief</option>
+                            <option>Vitamins &amp; Supplements</option>
+                            <option>Cardiovascular</option>
+                            <option>Diabetes</option>
+                            <option>Respiratory</option>
+                            <option>Gastrointestinal</option>
+                            <option>Dermatology</option>
+                            <option>Neurology</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="f-lbl">Manufacturer *</label>
+                        <input type="text" class="f-input" id="f-mfr" placeholder="e.g. Sun Pharma" required>
+                    </div>
+                    <div class="fg">
+                        <label class="f-lbl">Batch Number *</label>
+                        <input type="text" class="f-input" id="f-batch" placeholder="e.g. SPA-2024-001" required>
+                    </div>
+                    <div class="fg">
+                        <label class="f-lbl">Quantity (units) *</label>
+                        <input type="number" class="f-input" id="f-qty" placeholder="0" min="0" required>
+                    </div>
+                    <div class="fg">
+                        <label class="f-lbl">Expiry Date *</label>
+                        <input type="date" class="f-input" id="f-expiry" required>
+                    </div>
+                    <div class="fg">
+                        <label class="f-lbl">Price (₹) *</label>
+                        <input type="number" class="f-input" id="f-price" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="fg full">
+                        <label class="f-lbl">Shelf Location</label>
+                        <div class="fg triple">
+                            <input type="text"   class="f-input" id="f-shelf" placeholder="Shelf (A–Z)" maxlength="2" style="text-transform:uppercase">
+                            <input type="number" class="f-input" id="f-row"   placeholder="Row (1–10)" min="1" max="10">
+                            <input type="number" class="f-input" id="f-pos"   placeholder="Position" min="1" max="50">
+                        </div>
+                        <span class="shelf-hint">Format: Shelf letter · Row number · Position number</span>
+                    </div>
+                    <div class="fg full">
+                        <label class="f-lbl">Description</label>
+                        <textarea class="f-textarea" id="f-desc" placeholder="Optional notes…"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" id="submit-btn">＋ Add Medicine</button>
+                <button type="button" class="btn-cancel" id="cancel-btn" onclick="cancelEdit()">✕ Cancel Edit</button>
+            </form>
+        </div>
+
+        <!-- Table -->
+        <div class="table-card">
+            <div class="table-head">
+                <div>
+                    <div class="table-title">Inventory Records</div>
+                    <div class="table-sub" id="tbl-count">0 medicines</div>
+                </div>
+                <input type="text" class="a-search" id="a-search" placeholder="Search…" oninput="renderAdminTable()">
+            </div>
+            <div class="tbl-wrap">
+                <table class="inv-tbl">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Category</th>
+                            <th>Manufacturer</th>
+                            <th>Batch No.</th>
+                            <th>Qty</th>
+                            <th>Expiry</th>
+                            <th>Shelf</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-body"></tbody>
+                </table>
+                <div id="tbl-empty" class="tbl-empty" style="display:none">
+                    <p>No medicines found. Use the form on the left to add your first medicine.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── DATA ──
+const SAMPLE = [
+    { id:'s1',  name:'Amoxicillin 500mg',          category:'Antibiotics',             manufacturer:'Sun Pharma',       batchNumber:'SPA-2024-001', quantity:250, expiryDate:'2026-04-05', shelf:'A', row:'2', pos:'4',  price:12.50, description:'Broad-spectrum penicillin antibiotic' },
+    { id:'s2',  name:'Ciprofloxacin 250mg',         category:'Antibiotics',             manufacturer:'Cipla Ltd',        batchNumber:'CIP-2024-042', quantity:180, expiryDate:'2027-08-20', shelf:'A', row:'2', pos:'5',  price:18.00, description:'Fluoroquinolone antibiotic' },
+    { id:'s3',  name:'Azithromycin 500mg',           category:'Antibiotics',             manufacturer:'Alkem Labs',       batchNumber:'ALK-2024-088', quantity:120, expiryDate:'2026-04-18', shelf:'A', row:'3', pos:'1',  price:22.00, description:'Macrolide antibiotic for respiratory infections' },
+    { id:'s4',  name:'Ibuprofen 400mg',              category:'Pain Relief',             manufacturer:'Abbott India',     batchNumber:'ABT-2023-102', quantity:500, expiryDate:'2026-03-28', shelf:'B', row:'1', pos:'2',  price:8.00,  description:'NSAID for pain and inflammation' },
+    { id:'s5',  name:'Paracetamol 500mg',            category:'Pain Relief',             manufacturer:'GSK Pharma',       batchNumber:'GSK-2024-055', quantity:1000,expiryDate:'2027-12-31', shelf:'B', row:'1', pos:'1',  price:4.50,  description:'Analgesic and antipyretic' },
+    { id:'s6',  name:'Aspirin 75mg',                 category:'Pain Relief',             manufacturer:'Bayer AG',         batchNumber:'BAY-2024-033', quantity:300, expiryDate:'2026-09-15', shelf:'B', row:'1', pos:'3',  price:6.00,  description:'Low-dose antiplatelet therapy' },
+    { id:'s7',  name:'Vitamin C 500mg',              category:'Vitamins & Supplements',  manufacturer:'Himalaya Wellness',batchNumber:'HIM-2024-011', quantity:400, expiryDate:'2027-06-30', shelf:'C', row:'1', pos:'1',  price:15.00, description:'Ascorbic acid supplement' },
+    { id:'s8',  name:'Vitamin D3 60000 IU',          category:'Vitamins & Supplements',  manufacturer:'Mankind Pharma',   batchNumber:'MAN-2024-077', quantity:150, expiryDate:'2027-03-20', shelf:'C', row:'1', pos:'2',  price:35.00, description:'Cholecalciferol for bone health' },
+    { id:'s9',  name:'B-Complex Forte',              category:'Vitamins & Supplements',  manufacturer:'Pfizer India',     batchNumber:'PFZ-2024-029', quantity:200, expiryDate:'2026-11-30', shelf:'C', row:'1', pos:'3',  price:20.00, description:'Vitamin B complex for energy metabolism' },
+    { id:'s10', name:'Metoprolol 25mg',              category:'Cardiovascular',          manufacturer:'AstraZeneca',      batchNumber:'AZN-2024-015', quantity:180, expiryDate:'2027-05-10', shelf:'D', row:'2', pos:'1',  price:28.00, description:'Beta-blocker for hypertension' },
+    { id:'s11', name:'Atorvastatin 10mg',            category:'Cardiovascular',          manufacturer:'Lupin Ltd',        batchNumber:'LUP-2024-044', quantity:250, expiryDate:'2028-01-15', shelf:'D', row:'2', pos:'2',  price:45.00, description:'Statin for cholesterol management' },
+    { id:'s12', name:'Amlodipine 5mg',               category:'Cardiovascular',          manufacturer:'Torrent Pharma',   batchNumber:'TOR-2024-062', quantity:320, expiryDate:'2027-09-25', shelf:'D', row:'2', pos:'3',  price:15.00, description:'Calcium channel blocker' },
+    { id:'s13', name:'Metformin 500mg',              category:'Diabetes',                manufacturer:'USV Ltd',          batchNumber:'USV-2024-038', quantity:450, expiryDate:'2027-04-30', shelf:'E', row:'1', pos:'1',  price:10.00, description:'Biguanide for type 2 diabetes' },
+    { id:'s14', name:'Glipizide 5mg',                category:'Diabetes',                manufacturer:'Glenmark Pharma',  batchNumber:'GLN-2024-019', quantity:200, expiryDate:'2026-07-20', shelf:'E', row:'1', pos:'2',  price:25.00, description:'Sulfonylurea antidiabetic agent' },
+    { id:'s15', name:'Salbutamol 100mcg Inhaler',    category:'Respiratory',             manufacturer:'Cipla Ltd',        batchNumber:'CIP-2024-091', quantity:80,  expiryDate:'2026-05-15', shelf:'F', row:'1', pos:'1',  price:85.00, description:'Bronchodilator for asthma relief' },
+    { id:'s16', name:'Montelukast 10mg',             category:'Respiratory',             manufacturer:'Dr. Reddys',       batchNumber:'DRL-2024-053', quantity:160, expiryDate:'2027-10-12', shelf:'F', row:'1', pos:'2',  price:55.00, description:'Leukotriene antagonist for asthma' },
+    { id:'s17', name:'Cetirizine 10mg',              category:'Respiratory',             manufacturer:'Sun Pharma',       batchNumber:'SPA-2024-067', quantity:280, expiryDate:'2027-02-28', shelf:'F', row:'1', pos:'3',  price:9.00,  description:'Antihistamine for allergic rhinitis' },
+    { id:'s18', name:'Omeprazole 20mg',              category:'Gastrointestinal',        manufacturer:'Zydus Cadila',     batchNumber:'ZYD-2024-024', quantity:350, expiryDate:'2027-08-05', shelf:'G', row:'1', pos:'1',  price:18.00, description:'Proton pump inhibitor for acid reflux' },
+    { id:'s19', name:'Pantoprazole 40mg',            category:'Gastrointestinal',        manufacturer:'Nycomed Pharma',   batchNumber:'NYC-2024-031', quantity:220, expiryDate:'2028-03-10', shelf:'G', row:'1', pos:'2',  price:22.00, description:'PPI for gastric ulcer treatment' },
+    { id:'s20', name:'Clotrimazole 1% Cream',        category:'Dermatology',             manufacturer:'Johnson & Johnson',batchNumber:'JNJ-2024-008', quantity:100, expiryDate:'2026-12-20', shelf:'H', row:'2', pos:'1',  price:42.00, description:'Antifungal cream for skin infections' },
+];
+
+// ── STATE ──
+let meds = [];
+let sortOrder    = 'none';
+let activeCat    = 'All';
+let editingId    = null;
+let adminAuthed  = false;
+
+function save() { localStorage.setItem('medistore_v2', JSON.stringify(meds)); }
+
+// ── UTILS ──
+function daysUntil(d) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    return Math.ceil((new Date(d) - today) / 86400000);
+}
+function statusOf(d) {
+    const n = daysUntil(d);
+    if (n <= 30) return 'critical';
+    if (n <= 90) return 'warning';
+    return 'safe';
+}
+function fmtDate(d) {
+    return new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtShelf(m) {
+    if (!m.shelf) return '—';
+    let s = `Shelf ${m.shelf.toUpperCase()}`;
+    if (m.row) s += ` · R${m.row}`;
+    if (m.pos) s += ` · P${m.pos}`;
+    return s;
+}
+function shortShelf(m) {
+    if (!m.shelf) return null;
+    return `${m.shelf.toUpperCase()}${m.row ? '-R'+m.row : ''}${m.pos ? '-P'+m.pos : ''}`;
+}
+function uid() { return 'm' + Date.now() + Math.random().toString(36).slice(2,6); }
+function toast(msg, type='info') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = (type==='success'?'✓ ':type==='error'?'✕ ':'ℹ ') + msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+}
+const CAT_ICON = {
+    'Antibiotics':'💊','Pain Relief':'🩹','Vitamins & Supplements':'🌿',
+    'Cardiovascular':'❤️','Diabetes':'🩸','Respiratory':'🫁',
+    'Gastrointestinal':'🔬','Dermatology':'🧴','Neurology':'🧠','Other':'📦'
+};
+function catIcon(c) { return CAT_ICON[c] || '📦'; }
+
+// ── SORT ──
+function setSort(o) {
+    sortOrder = o;
+    ['asc','desc','none'].forEach(x => document.getElementById('s-'+x).classList.toggle('active', x===o));
+    renderEmployee();
+}
+
+// ── EMPLOYEE RENDER ──
+function renderEmployee() {
+    const q = document.getElementById('e-search').value.toLowerCase();
+
+    let list = meds.filter(m => {
+        const catOk = activeCat === 'All' || m.category === activeCat;
+        const qOk   = !q || [m.name, m.manufacturer, m.batchNumber, m.category].some(v => v.toLowerCase().includes(q));
+        return catOk && qOk;
+    });
+
+    if (sortOrder === 'asc')  list.sort((a,b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+    if (sortOrder === 'desc') list.sort((a,b) => new Date(b.expiryDate) - new Date(a.expiryDate));
+
+    renderPills();
+    renderAlerts();
+    renderGrid(list, q);
+}
+
+function renderPills() {
+    const counts = {};
+    meds.forEach(m => { counts[m.category] = (counts[m.category]||0)+1; });
+    const cats = ['All', ...Object.keys(counts)];
+    document.getElementById('cat-pills').innerHTML = cats.map(c => {
+        const n = c==='All' ? meds.length : counts[c];
+        return `<button class="cat-pill${activeCat===c?' active':''}" onclick="setCat('${c.replace(/'/g,"\\'")}')">
+            ${c==='All'?'🗂 ':catIcon(c)+' '}${c}
+            <span class="pill-count">${n}</span>
+        </button>`;
+    }).join('');
+}
+function setCat(c) { activeCat = c; renderEmployee(); }
+
+function renderAlerts() {
+    const crit = meds.filter(m => statusOf(m.expiryDate)==='critical').length;
+    const warn = meds.filter(m => statusOf(m.expiryDate)==='warning').length;
+    document.getElementById('e-alerts').innerHTML = `
+        <div class="alert-chip total"><div class="dot"></div>${meds.length} Total Medicines</div>
+        ${crit ? `<div class="alert-chip critical"><div class="dot"></div>${crit} Expiring within 30 days</div>` : ''}
+        ${warn ? `<div class="alert-chip warning"><div class="dot"></div>${warn} Expiring within 90 days</div>`  : ''}
+    `;
+}
+
+function renderGrid(list, q) {
+    const main = document.getElementById('e-main');
+    main.innerHTML = '';
+
+    if (!list.length) {
+        main.innerHTML = `<div class="med-grid"><div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-title">No medicines found</div>
+            <div class="empty-desc">Try adjusting your search or category filter</div>
+        </div></div>`;
+        return;
+    }
+
+    // Group by category unless filtering/sorting
+    if (activeCat === 'All' && sortOrder === 'none' && !q) {
+        const groups = {};
+        list.forEach(m => { (groups[m.category] = groups[m.category]||[]).push(m); });
+        for (const [cat, items] of Object.entries(groups)) {
+            const sec = document.createElement('div');
+            sec.innerHTML = `<div class="section-hd">${catIcon(cat)} ${cat}</div>`;
+            const grid = document.createElement('div');
+            grid.className = 'med-grid';
+            items.forEach((m,i) => grid.appendChild(buildCard(m,i)));
+            sec.appendChild(grid);
+            main.appendChild(sec);
+        }
+    } else {
+        const label = activeCat !== 'All' ? `${catIcon(activeCat)} ${activeCat}` : `🔍 Results (${list.length})`;
+        const sec = document.createElement('div');
+        sec.innerHTML = `<div class="section-hd">${label}</div>`;
+        const grid = document.createElement('div');
+        grid.className = 'med-grid';
+        list.forEach((m,i) => grid.appendChild(buildCard(m,i)));
+        sec.appendChild(grid);
+        main.appendChild(sec);
+    }
+}
+
+function buildCard(m, i) {
+    const st = statusOf(m.expiryDate);
+    const d  = daysUntil(m.expiryDate);
+    let badge = d < 0 ? 'EXPIRED' : d === 0 ? 'Expires TODAY' : d <= 30 ? `${d}d left` : fmtDate(m.expiryDate);
+    const card = document.createElement('div');
+    card.className = 'med-card';
+    card.style.animationDelay = `${i * 0.035}s`;
+    card.innerHTML = `
+        <div class="card-ribbon ${st}"></div>
+        <div class="card-body">
+            <div class="card-top">
+                <div class="med-name">${m.name}</div>
+                <div class="exp-badge ${st}">${badge}</div>
+            </div>
+            <div class="card-meta">
+                <div><div class="meta-lbl">Manufacturer</div><div class="meta-val">${m.manufacturer}</div></div>
+                <div><div class="meta-lbl">Batch No.</div><div class="meta-val">${m.batchNumber}</div></div>
+                <div><div class="meta-lbl">Quantity</div><div class="meta-val qty">${m.quantity} units</div></div>
+                <div><div class="meta-lbl">Price</div><div class="meta-val">₹${parseFloat(m.price).toFixed(2)}</div></div>
+            </div>
+            <div class="card-foot">
+                <div class="shelf-tag">
+                    <span class="si">📍</span>
+                    <span class="st">${fmtShelf(m)}</span>
+                </div>
+                <span class="cat-tag">${m.category}</span>
+            </div>
+        </div>`;
+    return card;
+}
+
+// ── NAVIGATION ──
+function gotoAdmin() {
+    document.getElementById('page-employee').classList.remove('active');
+    document.getElementById('page-admin').classList.add('active');
+    if (!adminAuthed) {
+        document.getElementById('login-overlay').classList.remove('hidden');
+    } else {
+        renderAdminTable();
+    }
+}
+function gotoEmployee() {
+    document.getElementById('page-admin').classList.remove('active');
+    document.getElementById('page-employee').classList.add('active');
+    renderEmployee();
+}
+function adminLogout() {
+    adminAuthed = false;
+    document.getElementById('pw').value = '';
+    document.getElementById('login-err').classList.remove('show');
+    document.getElementById('login-overlay').classList.remove('hidden');
+}
+
+// ── AUTH ──
+function doLogin(e) {
+    e.preventDefault();
+    if (document.getElementById('pw').value === 'admin123') {
+        adminAuthed = true;
+        document.getElementById('login-overlay').classList.add('hidden');
+        renderAdminTable();
+    } else {
+        const err = document.getElementById('login-err');
+        err.classList.add('show');
+        document.getElementById('pw').value = '';
+        setTimeout(() => err.classList.remove('show'), 3000);
+    }
+}
+
+// ── ADMIN CRUD ──
+function submitMedicine(e) {
+    e.preventDefault();
+    const m = {
+        id:           editingId || uid(),
+        name:         document.getElementById('f-name').value.trim(),
+        category:     document.getElementById('f-cat').value,
+        manufacturer: document.getElementById('f-mfr').value.trim(),
+        batchNumber:  document.getElementById('f-batch').value.trim(),
+        quantity:     parseInt(document.getElementById('f-qty').value),
+        expiryDate:   document.getElementById('f-expiry').value,
+        shelf:        document.getElementById('f-shelf').value.toUpperCase().trim(),
+        row:          document.getElementById('f-row').value.trim(),
+        pos:          document.getElementById('f-pos').value.trim(),
+        price:        parseFloat(document.getElementById('f-price').value),
+        description:  document.getElementById('f-desc').value.trim(),
+    };
+
+    if (editingId) {
+        const idx = meds.findIndex(x => x.id === editingId);
+        if (idx !== -1) meds[idx] = { ...meds[idx], ...m };
+        toast(`${m.name} updated`, 'success');
+        cancelEdit();
+    } else {
+        meds.unshift(m);
+        toast(`${m.name} added to inventory`, 'success');
+    }
+    save();
+    document.getElementById('med-form').reset();
+    renderAdminTable();
+}
+
+function editMedicine(id) {
+    const m = meds.find(x => x.id === id);
+    if (!m) return;
+    editingId = id;
+    document.getElementById('f-name').value    = m.name;
+    document.getElementById('f-cat').value     = m.category;
+    document.getElementById('f-mfr').value     = m.manufacturer;
+    document.getElementById('f-batch').value   = m.batchNumber;
+    document.getElementById('f-qty').value     = m.quantity;
+    document.getElementById('f-expiry').value  = m.expiryDate;
+    document.getElementById('f-shelf').value   = m.shelf || '';
+    document.getElementById('f-row').value     = m.row   || '';
+    document.getElementById('f-pos').value     = m.pos   || '';
+    document.getElementById('f-price').value   = m.price;
+    document.getElementById('f-desc').value    = m.description || '';
+    document.getElementById('form-title').textContent = 'Edit Medicine';
+    document.getElementById('form-icon').textContent  = '✎';
+    document.getElementById('submit-btn').textContent = '✓ Update Medicine';
+    document.getElementById('cancel-btn').classList.add('show');
+    document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEdit() {
+    editingId = null;
+    document.getElementById('med-form').reset();
+    document.getElementById('form-title').textContent = 'Add New Medicine';
+    document.getElementById('form-icon').textContent  = '＋';
+    document.getElementById('submit-btn').textContent = '＋ Add Medicine';
+    document.getElementById('cancel-btn').classList.remove('show');
+}
+
+function deleteMedicine(id) {
+    const m = meds.find(x => x.id === id);
+    if (!m || !confirm(`Delete "${m.name}"?\nThis action cannot be undone.`)) return;
+    meds = meds.filter(x => x.id !== id);
+    save();
+    renderAdminTable();
+    toast(`${m.name} removed`, 'error');
+}
+
+function renderAdminTable() {
+    const q = (document.getElementById('a-search')?.value || '').toLowerCase();
+    const list = q ? meds.filter(m =>
+        [m.name, m.category, m.manufacturer, m.batchNumber].some(v => v.toLowerCase().includes(q))
+    ) : [...meds];
+
+    document.getElementById('tbl-count').textContent = `${list.length} medicine${list.length!==1?'s':''}`;
+    const empty = document.getElementById('tbl-empty');
+    const tbody = document.getElementById('tbl-body');
+
+    if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = list.map(m => {
+        const st = statusOf(m.expiryDate);
+        const d  = daysUntil(m.expiryDate);
+        const expLabel = d < 0 ? 'Expired' : d <= 30 ? `${d}d` : fmtDate(m.expiryDate);
+        const sh = shortShelf(m);
+        return `<tr>
+            <td><strong style="color:var(--admin-text)">${m.name}</strong></td>
+            <td style="color:var(--teal);font-size:0.76rem">${m.category}</td>
+            <td class="mono">${m.manufacturer}</td>
+            <td class="mono">${m.batchNumber}</td>
+            <td class="mono">${m.quantity}</td>
+            <td><span class="sdot ${st}"></span><span class="mono">${expLabel}</span></td>
+            <td>${sh ? `<span class="shelf-pill">${sh}</span>` : '<span style="color:var(--admin-muted)">—</span>'}</td>
+            <td class="mono">₹${parseFloat(m.price).toFixed(2)}</td>
+            <td><div class="t-actions">
+                <button class="btn-te" onclick="editMedicine('${m.id}')">Edit</button>
+                <button class="btn-td" onclick="deleteMedicine('${m.id}')">Delete</button>
+            </div></td>
+        </tr>`;
+    }).join('');
+}
+
+// ── INIT (must run after all functions are defined) ──
+(function() {
+    const stored = localStorage.getItem('medistore_v2');
+    if (stored) {
+        try { meds = JSON.parse(stored); } catch(e) { meds = []; }
+        if (!meds.length) { meds = JSON.parse(JSON.stringify(SAMPLE)); save(); }
+    } else {
+        meds = JSON.parse(JSON.stringify(SAMPLE));
+        save();
+    }
+    renderEmployee();
+})();
+</script>
+</body>
+</html>
